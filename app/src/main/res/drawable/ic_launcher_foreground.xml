@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Top snooze button / handle -->
+    <path
+        android:pathData="M48,27 L60,27 A3,3 0 0,1 63,30 L63,33 L45,33 L45,30 A3,3 0 0,1 48,27 Z"
+        android:fillColor="#38BDF8" />
+
+    <!-- Left twin bell -->
+    <path
+        android:pathData="M31.2,28.5 C34.2,25.5 38.6,24.8 42,27.2 L39,32 C36.2,30.8 33.2,31.4 31.8,32.8 C30.4,34.2 31,37.2 32.2,40 L27.4,43 C25,39.6 25.7,35.2 28.7,32.2 Z"
+        android:fillColor="#818CF8" />
+
+    <!-- Right twin bell -->
+    <path
+        android:pathData="M76.8,28.5 C79.8,31.5 80.5,35.9 78.1,39.3 L73.3,36.3 C74.5,33.5 75.1,30.5 73.7,29.1 C72.3,27.7 69.3,28.3 66.5,29.5 L63.5,24.7 C66.9,22.3 71.3,23 74.3,26 Z"
+        android:fillColor="#818CF8" />
+
+    <!-- Left Leg -->
+    <path
+        android:pathData="M34,74 L27,83 A2,2 0 0,0 29.5,85.5 L37.5,78 Z"
+        android:fillColor="#64748B" />
+
+    <!-- Right Leg -->
+    <path
+        android:pathData="M74,74 L70.5,78 L78.5,85.5 A2,2 0 0,0 81,83 Z"
+        android:fillColor="#64748B" />
+
+    <!-- Clock Outer Rim (Radius 27 centered at 54, 55) -->
+    <path
+        android:pathData="M54,55m-27,0a27,27 0 1,1 54,0a27,27 0 1,1 -54,0"
+        android:strokeWidth="3.5"
+        android:strokeColor="#FFFFFF" />
+
+    <!-- Clock Inner Face Fill with gradient -->
+    <path
+        android:pathData="M54,55m-24,0a24,24 0 1,1 48,0a24,24 0 1,1 -48,0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="30"
+                android:startY="31"
+                android:endX="78"
+                android:endY="79"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#1E293B" />
+                <item android:offset="1.0" android:color="#0F172A" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- 12, 3, 6, 9 markers -->
+    <path
+        android:pathData="M54,35 L54,39 M54,71 L54,75 M34,55 L38,55 M70,55 L74,55"
+        android:strokeWidth="2"
+        android:strokeColor="#94A3B8"
+        android:strokeLineCap="round" />
+
+    <!-- Hour Hand (pointing toward 7 o'clock: approx 210 deg -> dx ~ -11, dy ~ 6) -->
+    <path
+        android:pathData="M54,55 L44,62"
+        android:strokeWidth="3"
+        android:strokeColor="#F8FAFC"
+        android:strokeLineCap="round" />
+
+    <!-- Minute Hand (pointing toward 12 o'clock: up to 39) -->
+    <path
+        android:pathData="M54,55 L54,41"
+        android:strokeWidth="2.5"
+        android:strokeColor="#38BDF8"
+        android:strokeLineCap="round" />
+
+    <!-- Center Pivot Pin -->
+    <path
+        android:pathData="M54,55m-2.5,0a2.5,2.5 0 1,1 5,0a2.5,2.5 0 1,1 -5,0"
+        android:fillColor="#38BDF8" />
+
+</vector>
