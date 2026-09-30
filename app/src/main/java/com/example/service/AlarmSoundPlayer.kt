@@ -2,12 +2,14 @@ package com.example.service
 
 import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
 import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,13 +20,21 @@ import kotlin.math.sin
 
 class AlarmSoundPlayer(private val context: Context) {
 
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var mediaPlayer: MediaPlayer? = null
     private var audioTrack: AudioTrack? = null
     private var synthJob: Job? = null
+    private var focusRequest: AudioFocusRequest? = null
     private val scope = CoroutineScope(Dispatchers.Default)
+
+    private val alarmAudioAttributes = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_ALARM)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .build()
 
     fun startPlaying(ringtoneUriString: String) {
         stopPlaying()
+        requestAlarmAudioFocus()
 
         when (ringtoneUriString) {
             "builtin_gentle" -> playSynthesizedTone(SynthType.GENTLE_CHIME)
@@ -47,15 +57,47 @@ class AlarmSoundPlayer(private val context: Context) {
         }
     }
 
+    private fun requestAlarmAudioFocus() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+                    .setAudioAttributes(alarmAudioAttributes)
+                    .setAcceptsDelayedFocusGain(false)
+                    .setOnAudioFocusChangeListener { /* maintain alarm playback */ }
+                    .build()
+                focusRequest = req
+                audioManager.requestAudioFocus(req)
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager.requestAudioFocus(
+                    null,
+                    AudioManager.STREAM_ALARM,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE
+                )
+            }
+        } catch (e: Exception) {
+            Log.w("AlarmSoundPlayer", "Failed to request audio focus", e)
+        }
+    }
+
+    private fun abandonAlarmAudioFocus() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                focusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+                focusRequest = null
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager.abandonAudioFocus(null)
+            }
+        } catch (e: Exception) {
+            Log.w("AlarmSoundPlayer", "Failed to abandon audio focus", e)
+        }
+    }
+
     private fun tryPlayMediaPlayer(uri: Uri?) {
         try {
             val player = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
+                setAudioAttributes(alarmAudioAttributes)
                 setDataSource(context, uri ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
                 isLooping = true
                 prepare()
@@ -83,12 +125,7 @@ class AlarmSoundPlayer(private val context: Context) {
         )
 
         val track = AudioTrack.Builder()
-            .setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            )
+            .setAudioAttributes(alarmAudioAttributes)
             .setAudioFormat(
                 AudioFormat.Builder()
                     .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
@@ -112,7 +149,6 @@ class AlarmSoundPlayer(private val context: Context) {
                     val timeSec = sampleIndex.toDouble() / sampleRate
                     val sampleValue: Double = when (type) {
                         SynthType.GENTLE_CHIME -> {
-                            // Harmonious chords: E5 (659.25Hz), G#5 (830.6Hz), B5 (987.77Hz), E6 (1318.5Hz) with 1.8s repeating envelope
                             val cycleTime = timeSec % 2.0
                             val env = Math.exp(-3.0 * cycleTime)
                             val note1 = sin(2.0 * Math.PI * 659.25 * timeSec)
@@ -122,7 +158,6 @@ class AlarmSoundPlayer(private val context: Context) {
                             (note1 * 0.35 + note2 * 0.3 + note3 * 0.25 + note4 * 0.2) * env
                         }
                         SynthType.DIGITAL_PULSE -> {
-                            // Two-tone modern digital beep: 880Hz / 1760Hz pulsating every 0.6s
                             val pulseTime = timeSec % 0.6
                             if (pulseTime < 0.35) {
                                 val freq = if (pulseTime < 0.17) 880.0 else 1174.66
@@ -132,7 +167,6 @@ class AlarmSoundPlayer(private val context: Context) {
                             }
                         }
                         SynthType.CLASSIC_BELL -> {
-                            // Warm resonant bell: fundamental 520Hz + harmonics with decay
                             val cycleTime = timeSec % 1.5
                             val env = Math.exp(-2.5 * cycleTime)
                             val f1 = sin(2.0 * Math.PI * 523.25 * timeSec) * 0.5
@@ -180,5 +214,7 @@ class AlarmSoundPlayer(private val context: Context) {
             Log.e("AlarmSoundPlayer", "Error stopping MediaPlayer", e)
         }
         mediaPlayer = null
+
+        abandonAlarmAudioFocus()
     }
 }
